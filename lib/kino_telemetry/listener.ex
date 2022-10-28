@@ -4,7 +4,6 @@ defmodule KinoTelemetry.Listener do
   # https://github.com/phoenixframework/phoenix_live_dashboard/blob/0afa3af9be1be830d92c47191157fee303d79af9/lib/phoenix/live_dashboard/telemetry_listener.ex
   @moduledoc false
   use GenServer
-  require Logger
 
   def listen(metrics) do
     DynamicSupervisor.start_child(
