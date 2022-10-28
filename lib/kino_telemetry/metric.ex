@@ -1,6 +1,6 @@
-defmodule KinoTelemetry.Chart do
+defmodule KinoTelemetry.Metric do
   @moduledoc """
-  Chart component renders a Telemetry.Metric definition as a cell.
+  Component that renders a Telemetry.Metric definition as a cell.
   """
   alias VegaLite, as: Vl
 
