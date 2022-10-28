@@ -1,0 +1,21 @@
+# Components
+
+```elixir
+Mix.install([
+  {:kino_telemetry, path: Path.expand("../", __DIR__)},
+  {:telemetry_poller, "~> 1.0"}
+])
+
+:telemetry_poller.start_link(measurements: [], period: 5_000)
+```
+
+## Kinos
+
+### KinoTelemetry.Metric
+
+This integration automatically renders a Telemetry.Metric as a chart:
+
+```elixir
+Telemetry.Metrics.last_value("vm.memory.binary", unit: :byte)
+|> KinoTelemetry.Metric.new()
+```

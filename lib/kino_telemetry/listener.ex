@@ -1,6 +1,6 @@
 defmodule KinoTelemetry.Listener do
   # Based on the PhoenixLiveDashboard Listener.
-  # MIT License. Copyright (c) 2020 Michael Crumm, Chris McCord, José Valim.
+  # MIT License. Copyright (c) 2019 Michael Crumm, Chris McCord, José Valim.
   # https://github.com/phoenixframework/phoenix_live_dashboard/blob/0afa3af9be1be830d92c47191157fee303d79af9/lib/phoenix/live_dashboard/telemetry_listener.ex
   @moduledoc false
   use GenServer
