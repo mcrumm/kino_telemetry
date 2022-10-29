@@ -14,7 +14,7 @@ Mix.install([
 
 ### KinoTelemetry
 
-This integration automatically renders a Telemetry.Metric as a chart:
+This integration automatically renders a [Telemetry.Metrics](https://hexdocs.pm/telemetry_metrics) definition as a chart:
 
 ```elixir
 Telemetry.Metrics.last_value("vm.memory.binary", unit: :byte)
