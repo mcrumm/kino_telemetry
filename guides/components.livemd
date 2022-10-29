@@ -2,8 +2,9 @@
 
 ```elixir
 Mix.install([
-  {:kino_telemetry, github: "mcrumm/kino_telemetry"},
-  {:telemetry_poller, "~> 1.0"}
+  {:telemetry_metrics, "~> 0.6"},
+  {:telemetry_poller, "~> 1.0"},
+  {:kino_telemetry, path: Path.expand("../", __DIR__)}
 ])
 
 :telemetry_poller.start_link(measurements: [], period: 5_000)
@@ -11,11 +12,11 @@ Mix.install([
 
 ## Kinos
 
-### KinoTelemetry.Metric
+### KinoTelemetry
 
 This integration automatically renders a Telemetry.Metric as a chart:
 
 ```elixir
 Telemetry.Metrics.last_value("vm.memory.binary", unit: :byte)
-|> KinoTelemetry.Metric.new()
+|> KinoTelemetry.new()
 ```
