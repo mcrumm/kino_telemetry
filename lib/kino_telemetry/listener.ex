@@ -28,9 +28,8 @@ defmodule KinoTelemetry.Listener do
     :ok
   end
 
-  def extract_datapoint_for_metric(metric, measurements, metadata, time \\ nil) do
+  defp extract_datapoint_for_metric(metric, measurements, metadata, time) do
     with true <- keep?(metric, metadata),
-         time = time || System.system_time(:microsecond),
          measurement = extract_measurement(metric, measurements, metadata),
          true <- measurement != nil do
       label = tags_to_label(metric, metadata)

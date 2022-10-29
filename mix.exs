@@ -12,7 +12,8 @@ defmodule KinoTelemetry.MixProject do
       elixir: "~> 1.13",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      docs: docs()
+      docs: docs(),
+      test_coverage: [summary: [threshold: 75]]
     ]
   end
 
