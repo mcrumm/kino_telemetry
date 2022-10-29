@@ -8,7 +8,7 @@ defmodule KinoTelemetryTest do
   end
 
   test "KinoTelemetry.Render.to_livebook/1" do
-    last_value = Telemetry.Metrics.last_value([:a, :b, :c])
-    assert {:js, _} = last_value |> KinoTelemetry.new() |> Kino.Render.to_livebook()
+    kino = Telemetry.Metrics.last_value([:a, :b, :c]) |> KinoTelemetry.new()
+    assert Kino.render(kino) == kino
   end
 end
