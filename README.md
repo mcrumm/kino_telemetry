@@ -2,7 +2,7 @@
 
 Renders [Telemetry.Metrics](https://github.com/beam-telemetry/telemetry_metrics) definitions in [Livebook](https://livebook.dev).
 
-<img width="918" alt="Screen Shot of Telemetry Metrics in Livebook" src="https://user-images.githubusercontent.com/168677/198753169-9fa4a016-0b6a-4777-a472-0d6d456f76ee.png">
+<img width="917" alt="Screen Shot of Telemetry Metrics in Livebook" src="https://user-images.githubusercontent.com/168677/198905630-78575011-d23f-4b54-9af9-de3e114e2f1d.png">
 
 ## Usage
 

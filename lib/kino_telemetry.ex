@@ -14,9 +14,9 @@ defmodule KinoTelemetry do
 
     chart =
       Vl.new(chart_options)
-      |> Vl.mark(:line)
-      |> Vl.encode_field(:x, "x", type: :quantitative)
-      |> Vl.encode_field(:y, "y", type: :quantitative)
+      |> Vl.mark(:line, point: true)
+      |> Vl.encode_field(:x, "x", title: "Time", type: :temporal)
+      |> Vl.encode_field(:y, "y", title: chart_label(metric), type: :quantitative)
       |> Kino.VegaLite.new()
 
     {:ok, pid} = KinoTelemetry.Listener.listen([{chart, metric}])
@@ -29,6 +29,27 @@ defmodule KinoTelemetry do
     |> Keyword.take([:width, :height])
     |> Keyword.put_new(:width, 400)
     |> Keyword.put_new(:height, 400)
+  end
+
+  defp chart_label(%{name: name}) do
+    name |> List.last() |> humanize()
+  end
+
+  # Humanizes a module or field name.
+  # Phoenix Framework. MIT License. Copyright (c) 2014 Chris McCord.
+  # https://github.com/phoenixframework/phoenix/blob/d488e2b60b74a98459cf117ae40ba013debc4807/lib/phoenix/naming.ex#L120-L131
+  defp humanize(atom) when is_atom(atom),
+    do: humanize(Atom.to_string(atom))
+
+  defp humanize(bin) when is_binary(bin) do
+    bin =
+      if String.ends_with?(bin, "_id") do
+        binary_part(bin, 0, byte_size(bin) - 3)
+      else
+        bin
+      end
+
+    bin |> String.replace("_", " ") |> String.capitalize()
   end
 
   defimpl Kino.Render do

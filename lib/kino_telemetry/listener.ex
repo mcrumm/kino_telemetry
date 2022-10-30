@@ -17,7 +17,7 @@ defmodule KinoTelemetry.Listener do
   end
 
   def handle_metrics(_event_name, measurements, metadata, metrics) do
-    time = System.system_time(:microsecond)
+    time = System.system_time(:millisecond)
 
     for {chart, metric} <- metrics,
         map = extract_datapoint_for_metric(metric, measurements, metadata, time) do
