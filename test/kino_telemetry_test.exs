@@ -13,6 +13,6 @@ defmodule KinoTelemetryTest do
 
     data = connect(kino.vl)
     assert %{spec: %{}, datasets: [[nil, [%{x: x, y: 123}]]]} = data
-    assert_in_delta(x, System.system_time(:microsecond), 5_000)
+    assert_in_delta(x, System.system_time(:millisecond), 5)
   end
 end
