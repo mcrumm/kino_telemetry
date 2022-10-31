@@ -17,11 +17,19 @@ defmodule KinoTelemetry do
       |> Vl.mark(:line, point: true)
       |> Vl.encode_field(:x, "x", title: "Time", type: :temporal)
       |> Vl.encode_field(:y, "y", title: chart_label(metric), type: :quantitative)
+      |> encode_tag_field(metric.__struct__, metric.tags)
       |> Kino.VegaLite.new()
 
     {:ok, pid} = KinoTelemetry.Listener.listen([{chart, metric}])
 
     %__MODULE__{metric: metric, vl: chart, pid: pid}
+  end
+
+  defp encode_tag_field(chart, _, []), do: chart
+
+  defp encode_tag_field(chart, _, tags) do
+    title = Enum.join(tags, "-")
+    Vl.encode_field(chart, :color, "label", title: title, type: :nominal)
   end
 
   defp chart_options(%{reporter_options: options}) do

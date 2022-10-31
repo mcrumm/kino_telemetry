@@ -32,4 +32,27 @@ defmodule KinoTelemetryTest do
     data = connect(kino.vl)
     assert %{spec: %{}, datasets: [[nil, [%{x: _, y: 100}]]]} = data
   end
+
+  test "pushes tagged measurements" do
+    last_value = Telemetry.Metrics.last_value("a.b.c", tags: [:tag])
+    kino = last_value |> KinoTelemetry.new() |> Kino.render()
+
+    :telemetry.execute([:a, :b], %{c: 100}, %{tag: "b"})
+    :telemetry.execute([:a, :b], %{c: 100}, %{tag: "a"})
+
+    data = connect(kino.vl)
+
+    assert %{
+             spec: %{},
+             datasets: [
+               [
+                 nil,
+                 [
+                   %{label: "b", x: _, y: 100},
+                   %{label: "a", x: _, y: 100}
+                 ]
+               ]
+             ]
+           } = data
+  end
 end

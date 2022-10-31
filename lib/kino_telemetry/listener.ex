@@ -21,8 +21,8 @@ defmodule KinoTelemetry.Listener do
 
     for {chart, metric} <- metrics,
         map = extract_datapoint_for_metric(metric, measurements, metadata, time) do
-      %{measurement: measurement, time: time} = map
-      Kino.VegaLite.push(chart, %{x: time, y: measurement})
+      %{label: label, measurement: measurement, time: time} = map
+      Kino.VegaLite.push(chart, %{label: label, x: time, y: measurement})
     end
 
     :ok
