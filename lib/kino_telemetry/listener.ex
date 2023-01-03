@@ -3,7 +3,7 @@ defmodule KinoTelemetry.Listener do
   # MIT License. Copyright (c) 2019 Michael Crumm, Chris McCord, José Valim.
   # https://github.com/phoenixframework/phoenix_live_dashboard/blob/0afa3af9be1be830d92c47191157fee303d79af9/lib/phoenix/live_dashboard/telemetry_listener.ex
   @moduledoc false
-  use GenServer
+  use GenServer, restart: :temporary
 
   def listen(metrics) do
     DynamicSupervisor.start_child(
