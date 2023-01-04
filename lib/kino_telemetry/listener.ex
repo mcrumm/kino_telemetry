@@ -5,22 +5,21 @@ defmodule KinoTelemetry.Listener do
   @moduledoc false
   use GenServer, restart: :temporary
 
-  def listen(metrics) do
+  def listen(chart, metric) do
     DynamicSupervisor.start_child(
       KinoTelemetry.DynamicSupervisor,
-      {__MODULE__, {self(), metrics}}
+      {__MODULE__, {self(), chart, metric}}
     )
   end
 
-  def start_link({parent, metrics}) do
-    GenServer.start_link(__MODULE__, {parent, metrics})
+  def start_link({parent, chart, metric}) do
+    GenServer.start_link(__MODULE__, {parent, chart, metric})
   end
 
-  def handle_metrics(_event_name, measurements, metadata, metrics) do
+  def handle_metrics(_event_name, measurements, metadata, {chart, metric}) do
     time = System.system_time(:millisecond)
 
-    for {chart, metric} <- metrics,
-        map = extract_datapoint_for_metric(metric, measurements, metadata, time) do
+    if map = extract_datapoint_for_metric(metric, measurements, metadata, time) do
       %{label: label, measurement: measurement, time: time} = map
       Kino.VegaLite.push(chart, %{label: label, x: time, y: measurement})
     end
@@ -69,17 +68,15 @@ defmodule KinoTelemetry.Listener do
   end
 
   @impl true
-  def init({parent, metrics}) do
+  def init({parent, chart, metric}) do
     Process.flag(:trap_exit, true)
     ref = Process.monitor(parent)
-    metrics_per_event = Enum.group_by(metrics, fn {_chart, metric} -> metric.event_name end)
+    event_name = metric.event_name
+    handler_id = {__MODULE__, event_name, self()}
 
-    for {event_name, metrics} <- metrics_per_event do
-      id = {__MODULE__, event_name, self()}
-      :telemetry.attach(id, event_name, &__MODULE__.handle_metrics/4, metrics)
-    end
+    :telemetry.attach(handler_id, event_name, &__MODULE__.handle_metrics/4, {chart, metric})
 
-    {:ok, %{ref: ref, events: Map.keys(metrics_per_event)}}
+    {:ok, %{ref: ref, handler_id: handler_id}}
   end
 
   @impl true
@@ -88,10 +85,8 @@ defmodule KinoTelemetry.Listener do
   end
 
   @impl true
-  def terminate(_reason, %{events: events}) do
-    for event <- events do
-      :telemetry.detach({__MODULE__, event, self()})
-    end
+  def terminate(_reason, %{handler_id: handler_id}) do
+    :telemetry.detach(handler_id)
 
     :ok
   end

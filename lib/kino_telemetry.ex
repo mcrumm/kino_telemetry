@@ -20,7 +20,7 @@ defmodule KinoTelemetry do
       |> encode_tag_field(metric.__struct__, metric.tags)
       |> Kino.VegaLite.new()
 
-    {:ok, pid} = KinoTelemetry.Listener.listen([{chart, metric}])
+    {:ok, pid} = KinoTelemetry.Listener.listen(chart, metric)
 
     %__MODULE__{metric: metric, vl: chart, pid: pid}
   end
