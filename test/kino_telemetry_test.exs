@@ -4,41 +4,41 @@ defmodule KinoTelemetryTest do
 
   setup :configure_livebook_bridge
 
-  test "last_value spec" do
-    kino = Telemetry.Metrics.last_value("a.b.c") |> KinoTelemetry.new()
+  test "last_value spec", c do
+    kino = Telemetry.Metrics.last_value("test.#{c.test}.value") |> KinoTelemetry.new()
     data = connect(kino.vl)
     assert %{spec: %{"mark" => %{"point" => true, "type" => "line"}}} = data
   end
 
-  test "pushes measurements after initial connection" do
-    last_value = Telemetry.Metrics.last_value("a.b.c")
+  test "pushes measurements after initial connection", c do
+    last_value = Telemetry.Metrics.last_value("test.#{c.test}.value")
     kino = last_value |> KinoTelemetry.new() |> Kino.render()
     assert %KinoTelemetry{metric: ^last_value} = kino
 
-    :telemetry.execute([:a, :b], %{c: 123}, %{})
+    :telemetry.execute([:test, c.test], %{value: 123}, %{})
 
     data = connect(kino.vl)
     assert %{spec: %{}, datasets: [[nil, [%{x: x, y: 123}]]]} = data
     assert_in_delta(x, System.system_time(:millisecond), 5)
   end
 
-  test "only pushes measurements to keep" do
-    last_value = Telemetry.Metrics.last_value("a.b.c", keep: & &1.keep?)
+  test "only pushes measurements to keep", c do
+    last_value = Telemetry.Metrics.last_value("test.#{c.test}.value", keep: & &1.keep?)
     kino = last_value |> KinoTelemetry.new() |> Kino.render()
 
-    :telemetry.execute([:a, :b], %{c: 200}, %{keep?: false})
-    :telemetry.execute([:a, :b], %{c: 100}, %{keep?: true})
+    :telemetry.execute([:test, c.test], %{value: 200}, %{keep?: false})
+    :telemetry.execute([:test, c.test], %{value: 100}, %{keep?: true})
 
     data = connect(kino.vl)
     assert %{spec: %{}, datasets: [[nil, [%{x: _, y: 100}]]]} = data
   end
 
-  test "pushes tagged measurements" do
-    last_value = Telemetry.Metrics.last_value("a.b.c", tags: [:tag])
+  test "pushes tagged measurements", c do
+    last_value = Telemetry.Metrics.last_value("test.#{c.test}.value", tags: [:tag])
     kino = last_value |> KinoTelemetry.new() |> Kino.render()
 
-    :telemetry.execute([:a, :b], %{c: 100}, %{tag: "b"})
-    :telemetry.execute([:a, :b], %{c: 100}, %{tag: "a"})
+    :telemetry.execute([:test, c.test], %{value: 100}, %{tag: "b"})
+    :telemetry.execute([:test, c.test], %{value: 100}, %{tag: "a"})
 
     data = connect(kino.vl)
 

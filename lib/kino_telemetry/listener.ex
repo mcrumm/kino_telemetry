@@ -68,9 +68,9 @@ defmodule KinoTelemetry.Listener do
   end
 
   @impl true
-  def init({parent, chart, metric}) do
+  def init({_parent, chart, metric}) do
     Process.flag(:trap_exit, true)
-    ref = Process.monitor(parent)
+    ref = kino_js_live_monitor(chart)
     event_name = metric.event_name
     handler_id = {__MODULE__, event_name, self()}
 
@@ -89,5 +89,12 @@ defmodule KinoTelemetry.Listener do
     :telemetry.detach(handler_id)
 
     :ok
+  end
+
+  defp kino_js_live_monitor(%Kino.JS.Live{} = live) do
+    # Avoid dialyzer warnings re: opaque struct- we need to monitor
+    # the live pid so we can terminate the listener on reevaulate.
+    pid = apply(Map, :fetch!, [live, :pid])
+    Process.monitor(pid)
   end
 end
