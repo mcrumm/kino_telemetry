@@ -17,6 +17,7 @@ defmodule KinoTelemetryTest do
 
     :telemetry.execute([:test, c.test], %{value: 123}, %{})
 
+    Process.sleep(1)
     data = connect(kino.vl)
     assert %{spec: %{}, datasets: [[nil, [%{x: x, y: 123}]]]} = data
     assert_in_delta(x, System.system_time(:millisecond), 5)
@@ -29,6 +30,7 @@ defmodule KinoTelemetryTest do
     :telemetry.execute([:test, c.test], %{value: 200}, %{keep?: false})
     :telemetry.execute([:test, c.test], %{value: 100}, %{keep?: true})
 
+    Process.sleep(1)
     data = connect(kino.vl)
     assert %{spec: %{}, datasets: [[nil, [%{x: _, y: 100}]]]} = data
   end
@@ -40,6 +42,7 @@ defmodule KinoTelemetryTest do
     :telemetry.execute([:test, c.test], %{value: 100}, %{tag: "b"})
     :telemetry.execute([:test, c.test], %{value: 100}, %{tag: "a"})
 
+    Process.sleep(1)
     data = connect(kino.vl)
 
     assert %{

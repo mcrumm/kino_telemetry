@@ -16,12 +16,11 @@ defmodule KinoTelemetry.Listener do
     GenServer.start_link(__MODULE__, {parent, chart, metric})
   end
 
-  def handle_metrics(_event_name, measurements, metadata, {chart, metric}) do
+  def handle_metrics(_event_name, measurements, metadata, {listener, ref, metric}) do
     time = System.system_time(:millisecond)
 
-    if map = extract_datapoint_for_metric(metric, measurements, metadata, time) do
-      %{label: label, measurement: measurement, time: time} = map
-      Kino.VegaLite.push(chart, %{label: label, x: time, y: measurement})
+    if datapoint = extract_datapoint_for_metric(metric, measurements, metadata, time) do
+      send(listener, {:datapoint, ref, datapoint})
     end
 
     :ok
@@ -74,9 +73,16 @@ defmodule KinoTelemetry.Listener do
     event_name = metric.event_name
     handler_id = {__MODULE__, event_name, self()}
 
-    :telemetry.attach(handler_id, event_name, &__MODULE__.handle_metrics/4, {chart, metric})
+    :telemetry.attach(handler_id, event_name, &__MODULE__.handle_metrics/4, {self(), ref, metric})
 
-    {:ok, %{ref: ref, handler_id: handler_id}}
+    {:ok, %{chart: chart, ref: ref, handler_id: handler_id}}
+  end
+
+  @impl true
+  def handle_info({:datapoint, ref, %{} = datapoint}, %{ref: ref} = state) do
+    %{label: label, measurement: measurement, time: time} = datapoint
+    Kino.VegaLite.push(state.chart, %{label: label, x: time, y: measurement})
+    {:noreply, state}
   end
 
   @impl true
