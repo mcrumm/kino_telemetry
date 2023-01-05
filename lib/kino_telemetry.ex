@@ -28,6 +28,14 @@ defmodule KinoTelemetry do
     %__MODULE__{metric: metric, vl: chart, pid: pid}
   end
 
+  def new(metric) when is_struct(metric, Telemetry.Metrics.Summary) do
+    raise ArgumentError, "Summary metrics are not supported"
+  end
+
+  def new(metric) when is_struct(metric, Telemetry.Metrics.Distribution) do
+    raise ArgumentError, "Distribution metrics are not supported"
+  end
+
   defp encode_tag_field(chart, _, []), do: chart
 
   defp encode_tag_field(chart, _, tags) do

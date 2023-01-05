@@ -18,6 +18,18 @@ defmodule KinoTelemetryTest do
     assert %{spec: %{"mark" => %{"point" => true, "type" => "line"}}} = data
   end
 
+  test "new/1 raises for unsupported metrics" do
+    assert_raise ArgumentError, ~r/not supported/, fn ->
+      Telemetry.Metrics.summary("a.b.c") |> KinoTelemetry.new()
+    end
+
+    assert_raise ArgumentError, ~r/not supported/, fn ->
+      Telemetry.Metrics.distribution("a.b.c") |> KinoTelemetry.new()
+    end
+
+    KinoTelemetry.new(nil)
+  end
+
   test "pushes measurements after initial connection", c do
     last_value = Telemetry.Metrics.last_value("test.#{c.test}.value")
     kino = last_value |> KinoTelemetry.new() |> Kino.render()
