@@ -3,7 +3,7 @@
 ```elixir
 Mix.install([
   {:telemetry_poller, "~> 1.0"},
-  {:kino_telemetry, path: Path.expand("../", __DIR__)}
+  {:kino_telemetry, github: "mcrumm/kino_telemetry"}
 ])
 
 :telemetry_poller.start_link(measurements: [], period: 5_000)

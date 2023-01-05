@@ -1,7 +1,6 @@
 defmodule KinoTelemetry.Projection do
-  @moduledoc """
-  Generic behaviour for transforming telemetry events for display.
-  """
+  # Generic behaviour for transforming telemetry events for display.
+  @moduledoc false
 
   @type measurement :: number()
 
@@ -31,20 +30,20 @@ defmodule KinoTelemetry.Projection do
 
   ## Examples
 
-    iex> Telemetry.Metrics.last_value("a.b.c") |> tags_to_label(%{})
-    nil
+      iex> Telemetry.Metrics.last_value("a.b.c") |> tags_to_label(%{})
+      nil
 
-    iex> Telemetry.Metrics.last_value("a.b.c") |> tags_to_label(%{foo: "bar"})
-    nil
+      iex> Telemetry.Metrics.last_value("a.b.c") |> tags_to_label(%{foo: "bar"})
+      nil
 
-    iex> Telemetry.Metrics.last_value("a.b.c", tags: [:foo]) |> tags_to_label(%{})
-    nil
+      iex> Telemetry.Metrics.last_value("a.b.c", tags: [:foo]) |> tags_to_label(%{})
+      nil
 
-    iex> Telemetry.Metrics.last_value("a.b.c", tags: [:foo]) |> tags_to_label(%{foo: "foo"})
-    "foo"
+      iex> Telemetry.Metrics.last_value("a.b.c", tags: [:foo]) |> tags_to_label(%{foo: "foo"})
+      "foo"
 
-    iex> Telemetry.Metrics.last_value("a.b.c", tags: [:foo, :bar]) |> tags_to_label(%{foo: "foo", bar: "bar"})
-    "foo bar"
+      iex> Telemetry.Metrics.last_value("a.b.c", tags: [:foo, :bar]) |> tags_to_label(%{foo: "foo", bar: "bar"})
+      "foo bar"
 
   """
   @spec tags_to_label(metric, map) :: label
