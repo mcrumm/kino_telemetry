@@ -53,8 +53,6 @@ defmodule KinoTelemetry.Listener do
     ref = kino_js_live_monitor(chart)
     event_name = metric.event_name
     handler_id = {__MODULE__, event_name, self()}
-    projection = projection(metric)
-    acc = projection.init(metric)
 
     :telemetry.attach(handler_id, event_name, &__MODULE__.handle_metrics/4, {self(), ref, metric})
 
@@ -64,18 +62,19 @@ defmodule KinoTelemetry.Listener do
        ref: ref,
        metric: metric,
        handler_id: handler_id,
-       projection: projection,
-       acc: acc
+       acc: %{}
      }}
   end
 
   @impl true
   def handle_info({:telemetry, ref, time, measurement, metadata}, %{ref: ref} = state) do
-    %{chart: chart, metric: metric, projection: projection, acc: acc} = state
+    %{chart: chart, metric: metric, acc: acc} = state
 
-    {pushes, new_acc} = projection.handle_data(measurement, metadata, metric, acc)
+    {label_values, new_acc} = KinoTelemetry.Projection.project(measurement, metadata, metric, acc)
 
-    data_points = Enum.map(pushes, fn {label, value} -> %{label: label, x: time, y: value} end)
+    data_points =
+      Enum.map(label_values, fn {label, value} -> %{label: label, x: time, y: value} end)
+
     Kino.VegaLite.push_many(chart, data_points)
 
     {:noreply, %{state | acc: new_acc}}
@@ -91,11 +90,6 @@ defmodule KinoTelemetry.Listener do
     :telemetry.detach(handler_id)
 
     :ok
-  end
-
-  # Telemetry.Metrics.LastValue => KinoTelemetry.LastValue
-  defp projection(%metric{}) do
-    Module.concat(KinoTelemetry, metric |> Module.split() |> List.last())
   end
 
   defp kino_js_live_monitor(%Kino.JS.Live{} = live) do

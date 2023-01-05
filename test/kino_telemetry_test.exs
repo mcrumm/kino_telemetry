@@ -26,8 +26,6 @@ defmodule KinoTelemetryTest do
     assert_raise ArgumentError, ~r/not supported/, fn ->
       Telemetry.Metrics.distribution("a.b.c") |> KinoTelemetry.new()
     end
-
-    KinoTelemetry.new(nil)
   end
 
   test "pushes measurements after initial connection", c do

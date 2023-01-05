@@ -2,28 +2,37 @@ defmodule KinoTelemetry.Projection do
   # Generic behaviour for transforming telemetry events for display.
   @moduledoc false
 
-  @type measurement :: number()
-
-  @type metadata :: :telemetry.event_metadata()
-
-  @type metric :: Telemetry.Metrics.t()
-
-  @type state :: term()
-
-  @type label :: nil | String.t()
-
-  @type label_value :: {label, number()}
-
   @doc """
-  Initializes state for the projection.
+  Performs a projection on the given `measurement` for the given `metric`.
   """
-  @callback init(metric) :: state
+  @spec project(number(), :telemetry.event_metadata(), Telemetry.Metrics.t(), map) ::
+          {[{String.t(), number()}], new_state :: term()}
+  def project(measurement, metadata, %struct{} = metric, acc) do
+    label = tags_to_label(metric, metadata)
 
-  @doc """
-  Returns the next chart datapoint.
-  """
-  @callback handle_data(measurement, metadata, metric, state) ::
-              {[label_value], new_state :: term()}
+    case struct do
+      Telemetry.Metrics.LastValue ->
+        {[{label, measurement}], acc}
+
+      Telemetry.Metrics.Counter ->
+        {value, new_counts} =
+          Map.get_and_update(acc, label, fn count ->
+            new_count = 1 + (count || 0)
+            {new_count, new_count}
+          end)
+
+        {[{label, value}], new_counts}
+
+      Telemetry.Metrics.Sum ->
+        {value, new_sums} =
+          Map.get_and_update(acc, label, fn sum ->
+            new_sum = measurement + (sum || 0)
+            {new_sum, new_sum}
+          end)
+
+        {[{label, value}], new_sums}
+    end
+  end
 
   @doc """
   Returns a string representation of the tag values for the given metric.
@@ -46,7 +55,7 @@ defmodule KinoTelemetry.Projection do
       "foo bar"
 
   """
-  @spec tags_to_label(metric, map) :: label
+  @spec tags_to_label(Telemetry.Metrics.t(), map) :: nil | String.t()
   def tags_to_label(metric, metadata)
 
   def tags_to_label(%{tags: []}, _metadata), do: nil
