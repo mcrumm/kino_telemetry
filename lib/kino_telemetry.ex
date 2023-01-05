@@ -9,7 +9,10 @@ defmodule KinoTelemetry do
   @doc """
   Creates a new kino with the given `Telemetry.Metrics` definition.
   """
-  def new(metric) when is_struct(metric, Telemetry.Metrics.LastValue) do
+  def new(metric)
+      when is_struct(metric, Telemetry.Metrics.LastValue) or
+             is_struct(metric, Telemetry.Metrics.Counter) or
+             is_struct(metric, Telemetry.Metrics.Sum) do
     chart_options = chart_options(metric)
 
     chart =

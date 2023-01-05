@@ -4,8 +4,16 @@ defmodule KinoTelemetryTest do
 
   setup :configure_livebook_bridge
 
-  test "last_value spec", c do
+  test "generates specs for metrics", c do
     kino = Telemetry.Metrics.last_value("test.#{c.test}.value") |> KinoTelemetry.new()
+    data = connect(kino.vl)
+    assert %{spec: %{"mark" => %{"point" => true, "type" => "line"}}} = data
+
+    kino = Telemetry.Metrics.counter("test.#{c.test}.value") |> KinoTelemetry.new()
+    data = connect(kino.vl)
+    assert %{spec: %{"mark" => %{"point" => true, "type" => "line"}}} = data
+
+    kino = Telemetry.Metrics.sum("test.#{c.test}.value") |> KinoTelemetry.new()
     data = connect(kino.vl)
     assert %{spec: %{"mark" => %{"point" => true, "type" => "line"}}} = data
   end

@@ -19,19 +19,18 @@ defmodule KinoTelemetry.Listener do
   def handle_metrics(_event_name, measurements, metadata, {listener, ref, metric}) do
     time = System.system_time(:millisecond)
 
-    if datapoint = extract_datapoint_for_metric(metric, measurements, metadata, time) do
-      send(listener, {:datapoint, ref, datapoint})
+    if measurement = extract_measurement_for_metric(metric, measurements, metadata) do
+      send(listener, {:telemetry, ref, time, measurement, metadata})
     end
 
     :ok
   end
 
-  defp extract_datapoint_for_metric(metric, measurements, metadata, time) do
+  defp extract_measurement_for_metric(metric, measurements, metadata) do
     with true <- keep?(metric, metadata),
          measurement = extract_measurement(metric, measurements, metadata),
          true <- measurement != nil do
-      label = tags_to_label(metric, metadata)
-      %{label: label, measurement: measurement, time: time}
+      measurement
     else
       _ -> nil
     end
@@ -48,41 +47,38 @@ defmodule KinoTelemetry.Listener do
     end
   end
 
-  defp tags_to_label(%{tags: []}, _metadata), do: nil
-
-  defp tags_to_label(%{tags: tags, tag_values: tag_values}, metadata) do
-    tag_values = tag_values.(metadata)
-
-    tags
-    |> Enum.reduce([], fn tag, acc ->
-      case tag_values do
-        %{^tag => value} -> [to_string(value) | acc]
-        %{} -> acc
-      end
-    end)
-    |> case do
-      [] -> nil
-      reversed_tags -> reversed_tags |> Enum.reduce(&[&1, " " | &2]) |> IO.iodata_to_binary()
-    end
-  end
-
   @impl true
   def init({_parent, chart, metric}) do
     Process.flag(:trap_exit, true)
     ref = kino_js_live_monitor(chart)
     event_name = metric.event_name
     handler_id = {__MODULE__, event_name, self()}
+    projection = projection(metric)
+    acc = projection.init(metric)
 
     :telemetry.attach(handler_id, event_name, &__MODULE__.handle_metrics/4, {self(), ref, metric})
 
-    {:ok, %{chart: chart, ref: ref, handler_id: handler_id}}
+    {:ok,
+     %{
+       chart: chart,
+       ref: ref,
+       metric: metric,
+       handler_id: handler_id,
+       projection: projection,
+       acc: acc
+     }}
   end
 
   @impl true
-  def handle_info({:datapoint, ref, %{} = datapoint}, %{ref: ref} = state) do
-    %{label: label, measurement: measurement, time: time} = datapoint
-    Kino.VegaLite.push(state.chart, %{label: label, x: time, y: measurement})
-    {:noreply, state}
+  def handle_info({:telemetry, ref, time, measurement, metadata}, %{ref: ref} = state) do
+    %{chart: chart, metric: metric, projection: projection, acc: acc} = state
+
+    {pushes, new_acc} = projection.handle_data(measurement, metadata, metric, acc)
+
+    data_points = Enum.map(pushes, fn {label, value} -> %{label: label, x: time, y: value} end)
+    Kino.VegaLite.push_many(chart, data_points)
+
+    {:noreply, %{state | acc: new_acc}}
   end
 
   @impl true
@@ -95,6 +91,11 @@ defmodule KinoTelemetry.Listener do
     :telemetry.detach(handler_id)
 
     :ok
+  end
+
+  # Telemetry.Metrics.LastValue => KinoTelemetry.LastValue
+  defp projection(%metric{}) do
+    Module.concat(KinoTelemetry, metric |> Module.split() |> List.last())
   end
 
   defp kino_js_live_monitor(%Kino.JS.Live{} = live) do
