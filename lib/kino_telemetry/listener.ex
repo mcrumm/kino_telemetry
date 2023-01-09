@@ -16,23 +16,21 @@ defmodule KinoTelemetry.Listener do
     GenServer.start_link(__MODULE__, {parent, chart, metric})
   end
 
-  def handle_metrics(_event_name, measurements, metadata, {chart, metric}) do
+  def handle_metrics(_event_name, measurements, metadata, {listener, ref, metric}) do
     time = System.system_time(:millisecond)
 
-    if map = extract_datapoint_for_metric(metric, measurements, metadata, time) do
-      %{label: label, measurement: measurement, time: time} = map
-      Kino.VegaLite.push(chart, %{label: label, x: time, y: measurement})
+    if measurement = extract_measurement_for_metric(metric, measurements, metadata) do
+      send(listener, {:telemetry, ref, time, measurement, metadata})
     end
 
     :ok
   end
 
-  defp extract_datapoint_for_metric(metric, measurements, metadata, time) do
+  defp extract_measurement_for_metric(metric, measurements, metadata) do
     with true <- keep?(metric, metadata),
          measurement = extract_measurement(metric, measurements, metadata),
          true <- measurement != nil do
-      label = tags_to_label(metric, metadata)
-      %{label: label, measurement: measurement, time: time}
+      measurement
     else
       _ -> nil
     end
@@ -49,24 +47,6 @@ defmodule KinoTelemetry.Listener do
     end
   end
 
-  defp tags_to_label(%{tags: []}, _metadata), do: nil
-
-  defp tags_to_label(%{tags: tags, tag_values: tag_values}, metadata) do
-    tag_values = tag_values.(metadata)
-
-    tags
-    |> Enum.reduce([], fn tag, acc ->
-      case tag_values do
-        %{^tag => value} -> [to_string(value) | acc]
-        %{} -> acc
-      end
-    end)
-    |> case do
-      [] -> nil
-      reversed_tags -> reversed_tags |> Enum.reduce(&[&1, " " | &2]) |> IO.iodata_to_binary()
-    end
-  end
-
   @impl true
   def init({_parent, chart, metric}) do
     Process.flag(:trap_exit, true)
@@ -74,9 +54,30 @@ defmodule KinoTelemetry.Listener do
     event_name = metric.event_name
     handler_id = {__MODULE__, event_name, self()}
 
-    :telemetry.attach(handler_id, event_name, &__MODULE__.handle_metrics/4, {chart, metric})
+    :telemetry.attach(handler_id, event_name, &__MODULE__.handle_metrics/4, {self(), ref, metric})
 
-    {:ok, %{ref: ref, handler_id: handler_id}}
+    {:ok,
+     %{
+       chart: chart,
+       ref: ref,
+       metric: metric,
+       handler_id: handler_id,
+       acc: %{}
+     }}
+  end
+
+  @impl true
+  def handle_info({:telemetry, ref, time, measurement, metadata}, %{ref: ref} = state) do
+    %{chart: chart, metric: metric, acc: acc} = state
+
+    {label_values, new_acc} = KinoTelemetry.Projection.project(measurement, metadata, metric, acc)
+
+    data_points =
+      Enum.map(label_values, fn {label, value} -> %{label: label, x: time, y: value} end)
+
+    Kino.VegaLite.push_many(chart, data_points)
+
+    {:noreply, %{state | acc: new_acc}}
   end
 
   @impl true

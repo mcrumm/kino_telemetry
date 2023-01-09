@@ -2,7 +2,6 @@
 
 ```elixir
 Mix.install([
-  {:telemetry_metrics, "~> 0.6"},
   {:telemetry_poller, "~> 1.0"},
   {:kino_telemetry, github: "mcrumm/kino_telemetry"}
 ])
@@ -16,7 +15,25 @@ Mix.install([
 
 This integration automatically renders a [Telemetry.Metrics](https://hexdocs.pm/telemetry_metrics) definition as a chart:
 
+**LastValue**
+
 ```elixir
-Telemetry.Metrics.last_value("vm.memory.binary", unit: :byte)
+Telemetry.Metrics.last_value("vm.memory.binary", unit: {:byte, :kilobyte})
 |> KinoTelemetry.new()
 ```
+
+**Counter**
+
+```elixir
+Telemetry.Metrics.counter("vm.memory.binary")
+|> KinoTelemetry.new()
+```
+
+**Sum**
+
+```elixir
+Telemetry.Metrics.sum("vm.memory.binary", unit: {:byte, :kilobyte})
+|> KinoTelemetry.new()
+```
+
+**Summary** and **Distribution** metrics are not supported.
